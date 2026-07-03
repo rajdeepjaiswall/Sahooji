@@ -163,7 +163,7 @@ export default function LoginScreen() {
               style={[
                 styles.optBox,
                 {
-                  backgroundColor: flashGreen ? COLORS.success : "#0F172A",
+                  backgroundColor: flashGreen ? COLORS.success : "#000000",
                 },
               ]}
               testID="phone-opt-box"

@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -66,6 +66,12 @@ export default function EventsScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const activeTag = useMemo(() => tags.find((t) => t.id === tagId), [tags, tagId]);
   const activeAssignee = useMemo(() => team.find((t) => t.id === assigneeId), [team, assigneeId]);
