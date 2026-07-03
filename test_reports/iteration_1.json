@@ -1,0 +1,56 @@
+{
+  "summary": "Comprehensive backend + frontend test for Sahu Sales Solution MVP. Backend: 24/24 pytest cases pass (100%) covering auth (register-first-admin/second-team-member/login/refresh/me/patch/password-change), tags (all 8 seeded with exact hex colors), contacts CRUD + bulk, events with nested reminders + status transitions, reminders list/snooze/delegate/end + activity feed with actor/event_title/contact_name, products CRUD, invoices (INV-YYYYMM-NNN numbering, indian FY, embedded contact, status filter), team (admin-only create/patch/reset-password + 403 for non-admin), /debug/counts, and universal _id scrubbing across all list endpoints. Frontend (mobile viewport 390x844): login screen renders logo/inputs/Sign In/Create Admin/forgot/phone-opt box/wrench FAB; login redirects to Dashboard with greeting + MY/TEAM/ACTIVITY + admin-only ALL_CONTACTS/ALL_EVENTS/ALL_REMINDERS + search + filter chips (All/Today/Overdue/Snoozed); 7-tap water-drop logo opens /debug (session, JWT VALID badge, DB tests, storage inspector); 5-tab bottom nav works; Contacts/Events/Invoices/Team tabs all render with correct filter tabs, search and FAB; new event form has contact-picker, tag-picker, title, description, datetime, reminder offsets, +custom; Team tab shows Add-member FAB for admin; Settings has Profile/Change Password/Alarm & Ringtone/Vibrate/Floating Assistant/Event Tags/Products/Phone Optimisation/DB connection/Sign out; sign out clears session and returns to /login. One UI bug found: contact list does not refetch after saving a new contact via /contact/new (new contact IS created in backend, list count remains stale). No deprecated Expo packages detected. No react-native red screen errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "contacts list (app/(tabs)/contacts.tsx)",
+        "issue": "After submitting the new-contact form, router pushes to /contacts and the contacts list is not refetched, so the newly created contact does not appear until a manual reload. Backend verified created (count went 8→9) but UI still showed '8 total'. Add a useFocusEffect / router.replace('/(tabs)/contacts') + refetch after successful create.",
+        "testID": "contact-form-submit",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "login",
+        "issues": [
+          "phone-opt-box background is rgb(15,23,42) (slate-900) not pure BLACK per spec. Cosmetic — reads as very dark navy. If strict black is required, change to #000000."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/conftest.py",
+    "/app/backend/tests/test_sahu_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Refetch contacts list on focus after creating a contact (or router.replace + revalidate). E.g., useFocusEffect(useCallback(() => { loadContacts(); }, [])) in contacts tab, and use router.replace('/(tabs)/contacts') after successful POST in /contact/new.",
+    "Optional: tweak phone-opt-box backgroundColor to '#000000' if a strictly black look is required (currently slate-900)."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 1000 lines — consider splitting into routers (auth, contacts, events, invoices, team, debug) for maintainability (>700 line threshold).",
+    "JWT_SECRET and JWT_REFRESH_SECRET have insecure dev defaults in code — production deploy MUST set env vars.",
+    "Team list (/api/team GET) is not admin-gated; any authenticated user can list all team members with public_profile fields. Consider restricting to admin if that's the intended access model.",
+    "list_reminders auto-forces assignee_id=user['id'] unless admin+scope=all — no filter for delegated reminders on non-admins works correctly, but no way for a user to see reminders they created but delegated to someone else."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py (new)",
+    "/app/backend/tests/test_sahu_api.py (new)",
+    "/app/backend/tests/__init__.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (24/24 pytest)",
+    "frontend": "~95% (all screens & flows render; 1 UI refresh bug on contact create)"
+  },
+  "seed_data_creation": "Admin `admin@sahusales.com`/`Sahu@2026` already exists in DB (was first user). Second-user, team members, contacts, events, reminders, invoices seeded via tests with 'TEST_' prefix. `UI Test Person` contact created via UI is persisted in backend.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend base URL: https://native-alarm-demo.preview.emergentagent.com  Admin creds: admin@sahusales.com / Sahu@2026 (already registered). To re-run backend tests: `cd /app/backend && python -m pytest tests/ -v`. Fresh test users are auto-created via fixtures with TEST_ prefix. For frontend, run mobile-viewport (390x844) Playwright. Contact list refresh-on-focus is the only UX bug to verify after fix.",
+  "rca_of_issue": "Contact-create UI-refresh bug: /app/frontend/app/contact/[id].tsx (or /contact/new.tsx) on submit navigates via router.back()/router.push('/contacts') but the /(tabs)/contacts screen uses a state-loaded list that is only fetched on mount, not on focus. Fix: import { useFocusEffect } from 'expo-router' inside app/(tabs)/contacts.tsx and refetch on every focus, OR emit an event / bump a query key after create."
+}
