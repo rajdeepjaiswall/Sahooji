@@ -1,0 +1,77 @@
+{
+  "theme": "light",
+  "archetype": "Swiss & High-Contrast",
+  "typography": {
+    "font_family": "Inter",
+    "headings": "Inter, tightly tracked, bold",
+    "body": "Inter, generous line height for readability",
+    "hierarchy": {
+      "h1": "text-4xl (32px), font-bold, tracking-tight",
+      "h2": "text-3xl (24px), font-bold, tracking-tight",
+      "h3": "text-xl (20px), font-semibold",
+      "body": "text-base (16px), leading-relaxed",
+      "caption": "text-sm (14px), text-slate-500",
+      "badge": "text-xs (12px), uppercase, tracking-widest, font-bold"
+    }
+  },
+  "colors": {
+    "primary": "#1565C0",
+    "primary_dark": "#0D47A1",
+    "background": "#FFFFFF",
+    "surface": "#F8FAFC",
+    "text_primary": "#0F172A",
+    "text_secondary": "#475569",
+    "border": "#E2E8F0",
+    "event_tags": {
+      "Call": "#F97316",
+      "Demo Call": "#3B82F6",
+      "Payment Collection": "#22C55E",
+      "Payment Request": "#EAB308",
+      "AMC Renewal": "#EF4444",
+      "Follow Up": "#8B5CF6",
+      "Installation": "#10B981",
+      "Meeting": "#EC4899"
+    },
+    "reminder_borders": {
+      "upcoming": "#22C55E",
+      "snoozed": "#EAB308",
+      "overdue": "#EF4444",
+      "archived": "#94A3B8"
+    }
+  },
+  "layout_and_spacing": {
+    "padding": "Generous spacing. Use 16px (p-4) to 24px (p-6) for screen containers and card internals.",
+    "touch_targets": "Minimum 44pt (44px) height/width for all buttons and interactive touchables (mobile-first accessibility).",
+    "borders_and_radius": "Cards should have subtle 1px borders and soft shadows. Use 8px-12px border radius for standard components, and fully rounded (9999px) for badges and avatars."
+  },
+  "components": {
+    "navigation": "5-tab bottom navigation (Dashboard, Contacts, Events, Invoices, Team). Separate Settings screen. Hidden /debug page accessible by 7-tapping the logo.",
+    "login": "Centered card with water-drop logo, 'Internal sign-in only', email+password, large Sign In button, full-width outlined 'Create Admin Account' button. Below the card: a BLACK rounded box '🔧 Optimise phone for reliable reminders' which turns GREEN for 3 seconds when all permissions are granted, then disappears.",
+    "reminder_cards": "Must feature a thick colored left border (green/yellow/red/grey) indicating status. Dense but clean data display.",
+    "activity_feed": "List items annotated with specific icons: 🔔 (triggered), 💤 (snoozed), ✅ (ended), 👤 (delegated).",
+    "contacts_list": "Include search, sort, colored initials avatars, and a Floating Action Button (FAB). Detail view has Call/WhatsApp/SMS/Email action buttons.",
+    "events": "Filter tabs (Upcoming/Completed/Cancelled/All), filter by tag, by assignee. Event creation supports multiple reminders.",
+    "invoices": "Tabs (Draft/Sent/Paid/Cancelled/All). PDF generation with specific header: org name in #1565C0, 'INVOICE', two-column block, alternating row items table with blue header, right-aligned totals, 'Errors & Omissions Excepted', signature box.",
+    "team_settings": "Team member cards with avatar, name, role badge, permission toggles. Settings includes profile, password, ringtone, tags manager, products manager, DB connection, floating assistant toggle, Phone Optimisation panel.",
+    "alarm_takeover": "Full-screen takeover Modal/View. Gradient background matching the event tag color. Large contact name, organization, tag badge, event time. Red END button, multi-option SNOOZE button, ASSIGN TO, and quick WhatsApp/Call/SMS actions. High contrast text.",
+    "dynamic_island": "Pill-shaped absolute overlay positioned at top-center with 🔔 title, 💤 snooze, and ❌ end buttons.",
+    "floating_assistant": "52dp circular blue water-drop assistant bubble. Must be draggable and float above other content.",
+    "phone_optimization_panel": "Reusable scannable component listing 6 items with green 'Done' or red 'Needs action' badges, 'Fix' buttons, and an overall progress bar.",
+    "debug_page": "Contains session info, JWT decoder, DB test panel, storage inspector, and live log viewer."
+  },
+  "media": {
+    "logo": "Use a vector icon (e.g., Lucide 'Droplet' or FontAwesome 'tint') colored in #1565C0 for the water-drop logo. Ensure it supports the 7-tap gesture.",
+    "image_urls": []
+  },
+  "testing": {
+    "data_testid": "All interactive and key informational elements MUST include a `testID` (and `data-testid` where applicable) attribute (e.g., testID='login-submit-button')."
+  },
+  "instructions_to_main_agent": [
+    "This is a React Native Expo mobile app. Do NOT use HTML DOM elements (div, span). Use View, Text, TouchableOpacity, ScrollView, etc.",
+    "Apply styles using StyleSheet or NativeWind (Tailwind for React Native) to achieve the design system.",
+    "The ALARM UI must be an urgent, full-screen takeover. Use expo-linear-gradient for the background color based on the event tag.",
+    "The floating assistant requires react-native-gesture-handler and react-native-reanimated for draggable functionality.",
+    "Ensure the PDF generation strictly follows the invoice design requirements using expo-print or react-native-html-to-pdf.",
+    "Implement all colored badges, reminder borders, and activity icons exactly as specified."
+  ]
+}
