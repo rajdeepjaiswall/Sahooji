@@ -1,0 +1,7 @@
+{
+  "name": "sahu-alarm",
+  "version": "1.0.0",
+  "description": "Native alarm layer for Sahu Sales Solution (AlarmManager + FullScreenIntent + Bubble + Overlay pill + KeepAlive + Floating assistant).",
+  "main": "index.ts",
+  "types": "index.ts"
+}

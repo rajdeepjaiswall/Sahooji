@@ -1,0 +1,90 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Permissions required for the Sahu alarm chain. These are merged into the
+      final app manifest. Runtime permissions (POST_NOTIFICATIONS, SYSTEM_ALERT_WINDOW,
+      SCHEDULE_EXACT_ALARM on Android 12+, USE_FULL_SCREEN_INTENT on Android 14+)
+      still need to be granted from Settings — the module opens the exact screens.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <application>
+
+        <!-- Full-screen alarm takeover activity. -->
+        <activity
+            android:name="expo.modules.sahualarm.AlarmActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen" />
+
+        <!-- Bubble activity (Android 11+ bubbles). -->
+        <activity
+            android:name="expo.modules.sahualarm.BubbleActivity"
+            android:exported="false"
+            android:allowEmbedded="true"
+            android:resizeableActivity="true"
+            android:documentLaunchMode="always"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
+
+        <!-- Receivers: alarm firing, action buttons, boot restore. -->
+        <receiver
+            android:name="expo.modules.sahualarm.AlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name="expo.modules.sahualarm.AlarmActionReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name="expo.modules.sahualarm.BootReceiver"
+            android:exported="true"
+            android:enabled="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <!-- KeepAlive foreground service. -->
+        <service
+            android:name="expo.modules.sahualarm.KeepAliveService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="reminder_delivery" />
+        </service>
+
+        <!-- Floating water-drop assistant. -->
+        <service
+            android:name="expo.modules.sahualarm.FloatingAssistantService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="floating_assistant" />
+        </service>
+
+    </application>
+</manifest>

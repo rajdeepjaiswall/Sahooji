@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AppState, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { getNativePermissionStatus, openSetting, requestNotificationPermission } from "@/src/native-alarm";
 import { COLORS, RADIUS, SHADOW, SPACING } from "@/src/theme";
 
 export type OptimizationItemKey =
@@ -37,36 +38,18 @@ const ITEMS: Item[] = [
 
 type Status = Record<OptimizationItemKey, boolean>;
 
-// -----------------------------------------------------------------------------
-// Native bridge (via global.SahuNative injected by the future Expo Config Plugin).
-// On Expo Go / web / iOS this is undefined — we return sensible defaults.
-// -----------------------------------------------------------------------------
-type NativeBridge = {
-  getPermissionStatus: () => Promise<Status & { manufacturer?: string }>;
-  openSettings: (key: OptimizationItemKey) => Promise<void>;
-};
-
-function getNativeBridge(): NativeBridge | null {
-  const g: any = globalThis as any;
-  return g?.SahuNative || null;
-}
-
 async function fetchStatus(): Promise<Status> {
-  const bridge = getNativeBridge();
-  if (bridge) {
-    try {
-      const s = await bridge.getPermissionStatus();
-      return {
-        notifications: !!s.notifications,
-        exact_alarms: !!s.exact_alarms,
-        full_screen: !!s.full_screen,
-        overlay: !!s.overlay,
-        battery: !!s.battery,
-        autostart: !!s.autostart,
-      };
-    } catch {
-      /* fall through */
-    }
+  // Prefer the native module when running in the APK build.
+  const native = await getNativePermissionStatus();
+  if (native) {
+    return {
+      notifications: !!native.notifications,
+      exact_alarms: !!native.exact_alarms,
+      full_screen: !!native.full_screen,
+      overlay: !!native.overlay,
+      battery: !!native.battery,
+      autostart: !!native.autostart,
+    };
   }
   // Web / Expo Go fallback: browser notification permission for #1, others granted.
   if (Platform.OS === "web" && typeof (globalThis as any).Notification !== "undefined") {
@@ -90,15 +73,18 @@ async function fetchStatus(): Promise<Status> {
 }
 
 async function openFixFlow(key: OptimizationItemKey) {
-  const bridge = getNativeBridge();
-  if (bridge) {
-    try {
-      await bridge.openSettings(key);
+  // 1) Native bridge is the reliable path in the APK.
+  const native = await getNativePermissionStatus();
+  if (native !== null) {
+    if (key === "notifications") {
+      const granted = await requestNotificationPermission();
+      if (!granted) await openSetting("notifications");
       return;
-    } catch {
-      /* fall through */
     }
+    await openSetting(key);
+    return;
   }
+  // 2) Web / Expo Go fallback.
   if (Platform.OS === "web") {
     if (key === "notifications" && typeof (globalThis as any).Notification !== "undefined") {
       await (globalThis as any).Notification.requestPermission();

@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "Sahu Sales Solution",
+    "slug": "sahu-sales-solution",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
-    "userInterfaceStyle": "automatic",
+    "scheme": "sahusales",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -15,10 +15,31 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#1565C0"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.emergent.nativealarmdemo.fhcx1e"
+      "package": "com.emergent.nativealarmdemo.fhcx1e",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.DISABLE_KEYGUARD",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+        "android.permission.READ_CONTACTS",
+        "android.permission.CALL_PHONE",
+        "android.permission.SEND_SMS",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -33,10 +54,28 @@
           "image": "./assets/images/splash-image.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000000"
+          "backgroundColor": "#1565C0"
         }
       ],
-      "@react-native-community/datetimepicker"
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Auto-tag contacts with GPS."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Import your phone contacts into Sahu."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1565C0"
+        }
+      ],
+      "./plugins/sahu-alarm-plugin.js"
     ],
     "experiments": {
       "typedRoutes": true

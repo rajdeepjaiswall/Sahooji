@@ -26,6 +26,7 @@ import { api, backendBaseUrl, clearTokens } from "@/src/api";
 import { useAuth } from "@/src/auth-context";
 import { PhoneOptimizationPanel } from "@/src/components/PhoneOptimizationPanel";
 import { WaterDropLogo } from "@/src/components/WaterDropLogo";
+import { startFloatingBubble, stopFloatingBubble } from "@/src/native-alarm";
 import { COLORS, RADIUS, SHADOW, SPACING } from "@/src/theme";
 import { useToast } from "@/src/toast";
 
@@ -93,7 +94,13 @@ export default function SettingsScreen() {
             onValueChange={async (v) => {
               try {
                 await patchUser({ floating_assistant: v });
-                if (v) toast.show("Requires 'Display over other apps' on Android APK build", "info");
+                if (v) {
+                  await startFloatingBubble();
+                  toast.show("Floating assistant on (requires 'Display over other apps')", "info");
+                } else {
+                  await stopFloatingBubble();
+                  toast.show("Floating assistant off", "success");
+                }
               } catch (e: any) {
                 toast.show(e?.detail || "Failed", "error");
               }

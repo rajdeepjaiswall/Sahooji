@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sahu_alarm_channel_id">sahu_alarms</string>
+    <string name="sahu_alarm_channel_name">Sahu Reminders</string>
+    <string name="sahu_keepalive_channel_id">sahu_keepalive</string>
+    <string name="sahu_keepalive_channel_name">Sahu Background</string>
+    <string name="sahu_bubble_channel_id">sahu_bubbles</string>
+    <string name="sahu_bubble_channel_name">Sahu Bubbles</string>
+</resources>
