@@ -547,7 +547,49 @@ async def list_events(
     if scope != "all" or user.get("role") != "admin":
         filt["$or"] = [{"assigned_to": user["id"]}, {"created_by": user["id"]}]
     docs = await db.events.find(filt).sort("event_at", -1).to_list(2000)
-    return [await _enrich_event(d) for d in docs]
+    return await _batch_enrich_events(docs)
+
+
+async def _batch_enrich_events(docs: list[dict]) -> list[dict]:
+    """Batch-fetch related contacts / tags / assignees / reminders in $in queries."""
+    if not docs:
+        return []
+    contact_ids = {d.get("contact_id") for d in docs if d.get("contact_id")}
+    tag_ids = {d.get("tag_id") for d in docs if d.get("tag_id")}
+    assignee_ids = {d.get("assigned_to") for d in docs if d.get("assigned_to")}
+    event_ids = [d.get("id") for d in docs if d.get("id")]
+
+    contacts_map: dict[str, dict] = {}
+    if contact_ids:
+        async for c in db.contacts.find({"id": {"$in": list(contact_ids)}}):
+            contacts_map[c["id"]] = c
+    tags_map: dict[str, dict] = {}
+    if tag_ids:
+        async for t in db.event_tags.find({"id": {"$in": list(tag_ids)}}):
+            tags_map[t["id"]] = t
+    assignees_map: dict[str, dict] = {}
+    if assignee_ids:
+        async for p in db.profiles.find({"id": {"$in": list(assignee_ids)}}):
+            assignees_map[p["id"]] = p
+    reminders_by_event: dict[str, list[dict]] = {}
+    if event_ids:
+        async for r in db.reminders.find({"event_id": {"$in": event_ids}}).sort("remind_at", 1):
+            reminders_by_event.setdefault(r["event_id"], []).append(r)
+
+    out = []
+    for d in docs:
+        row = scrub(d)
+        if not row:
+            continue
+        c = contacts_map.get(row.get("contact_id"))
+        row["contact"] = scrub(c)
+        t = tags_map.get(row.get("tag_id"))
+        row["tag"] = scrub(t)
+        a = assignees_map.get(row.get("assigned_to"))
+        row["assignee"] = public_profile(a) if a else None
+        row["reminders"] = [scrub(r) for r in reminders_by_event.get(row["id"], [])]
+        out.append(row)
+    return out
 
 
 @api.post("/events")
@@ -644,7 +686,23 @@ async def list_reminders(
     if scope != "all" or user.get("role") != "admin":
         filt["assignee_id"] = user["id"]
     docs = await db.reminders.find(filt).sort("remind_at", 1).to_list(2000)
-    return [await _enrich_reminder(d) for d in docs]
+
+    if not docs:
+        return []
+    event_ids = [d.get("event_id") for d in docs if d.get("event_id")]
+    events_docs: list[dict] = []
+    if event_ids:
+        events_docs = await db.events.find({"id": {"$in": event_ids}}).to_list(2000)
+    enriched_events = await _batch_enrich_events(events_docs)
+    events_map = {e["id"]: e for e in enriched_events}
+    out = []
+    for r in docs:
+        row = scrub(r)
+        if not row:
+            continue
+        row["event"] = events_map.get(row.get("event_id"))
+        out.append(row)
+    return out
 
 
 class ReminderActionIn(BaseModel):
@@ -699,16 +757,42 @@ async def act_reminder(rid: str, data: ReminderActionIn, user=Depends(get_curren
 @api.get("/activity")
 async def activity(user=Depends(get_current_user), limit: int = 100):
     docs = await db.reminder_activity.find().sort("created_at", -1).to_list(limit)
+    if not docs:
+        return []
+    actor_ids = {d.get("actor_id") for d in docs if d.get("actor_id")}
+    reminder_ids = [d.get("reminder_id") for d in docs if d.get("reminder_id")]
+
+    actors_map: dict[str, dict] = {}
+    if actor_ids:
+        async for p in db.profiles.find({"id": {"$in": list(actor_ids)}}):
+            actors_map[p["id"]] = p
+    reminders_map: dict[str, dict] = {}
+    if reminder_ids:
+        async for r in db.reminders.find({"id": {"$in": reminder_ids}}):
+            reminders_map[r["id"]] = r
+    event_ids = list({r.get("event_id") for r in reminders_map.values() if r.get("event_id")})
+    events_map: dict[str, dict] = {}
+    contact_ids: set[str] = set()
+    if event_ids:
+        async for e in db.events.find({"id": {"$in": event_ids}}):
+            events_map[e["id"]] = e
+            if e.get("contact_id"):
+                contact_ids.add(e["contact_id"])
+    contacts_map: dict[str, dict] = {}
+    if contact_ids:
+        async for c in db.contacts.find({"id": {"$in": list(contact_ids)}}):
+            contacts_map[c["id"]] = c
+
     out = []
     for d in docs:
         row = scrub(d)
-        actor = await db.profiles.find_one({"id": row.get("actor_id")})
+        actor = actors_map.get(row.get("actor_id"))
         row["actor"] = public_profile(actor) if actor else None
-        rem = await db.reminders.find_one({"id": row.get("reminder_id")})
+        rem = reminders_map.get(row.get("reminder_id"))
         if rem:
-            ev = await db.events.find_one({"id": rem.get("event_id")})
+            ev = events_map.get(rem.get("event_id"))
             if ev:
-                c = await db.contacts.find_one({"id": ev.get("contact_id")})
+                c = contacts_map.get(ev.get("contact_id"))
                 row["event_title"] = ev.get("title")
                 row["contact_name"] = c.get("full_name") if c else None
         out.append(row)
@@ -811,11 +895,17 @@ async def list_invoices(user=Depends(get_current_user), status: str | None = Non
     if q:
         filt["invoice_number"] = {"$regex": q, "$options": "i"}
     docs = await db.invoices.find(filt).sort("invoice_date", -1).to_list(2000)
+    if not docs:
+        return []
+    contact_ids = {d.get("contact_id") for d in docs if d.get("contact_id")}
+    contacts_map: dict[str, dict] = {}
+    if contact_ids:
+        async for c in db.contacts.find({"id": {"$in": list(contact_ids)}}):
+            contacts_map[c["id"]] = c
     out = []
     for d in docs:
         row = scrub(d)
-        c = await db.contacts.find_one({"id": row.get("contact_id")})
-        row["contact"] = scrub(c)
+        row["contact"] = scrub(contacts_map.get(row.get("contact_id")))
         out.append(row)
     return out
 
